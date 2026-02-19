@@ -1,6 +1,8 @@
 package com.loopers.domain.member;
 
+import java.util.Optional;
+
 public interface MemberRepository {
-    boolean exists(String loginId);
+    Optional<MemberEntity> find(String loginId);
     MemberEntity save(MemberEntity member);
 }
