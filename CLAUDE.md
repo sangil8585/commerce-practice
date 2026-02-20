@@ -180,34 +180,54 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 | 단계 | 상태 | 파일 |
 |------|------|------|
 | E2E 테스트 작성 | ✅ 완료 (RED) | `src/test/java/.../interfaces/api/member/MemberV1ApiE2ETest.java` |
-| E2E 구현 (GREEN) | ⏳ 사용자 작업 중 | 회원가입 API 흐름 연결 중 |
+| E2E 구현 (GREEN) | ⏳ 사용자 작업 중 | 회원가입 흐름 완성, 비밀번호 검증 구현 중 |
 | 통합 테스트 작성 | ❌ 대기 | - |
 | 단위 테스트 작성 | ❌ 대기 | - |
+
+### E2E 테스트 통과 현황
+
+| 테스트 | 상태 |
+|--------|------|
+| 유효한 정보로 회원가입 → 200 OK | ✅ 통과 |
+| 중복 loginId 가입 → 409 CONFLICT | ✅ 통과 |
+| 비밀번호 8자 미만 → 400 BAD_REQUEST | ❌ 미구현 (다음 작업) |
+| 비밀번호에 생년월일 포함 → 400 BAD_REQUEST | ❌ 미구현 (다음 작업) |
+| 유효한 인증 헤더로 내 정보 조회 → 200 OK | ❌ 미구현 |
+| 잘못된 비밀번호로 내 정보 조회 → 401 UNAUTHORIZED | ❌ 미구현 |
+| 유효한 새 비밀번호로 변경 → 200 OK | ❌ 미구현 |
+| 현재 비밀번호와 동일한 비밀번호 변경 → 400 BAD_REQUEST | ❌ 미구현 |
 
 ### 완료된 파일들 (commerce-api 기준)
 
 | 파일 | 상태 | 설명 |
 |------|------|------|
 | `interfaces/api/member/MemberV1ApiSpec.java` | ✅ | Swagger API 스펙 인터페이스 |
-| `interfaces/api/member/MemberV1Dto.java` | ✅ | SignupRequest(`toCommand()` 포함), SignupResponse, MeResponse, ChangePasswordRequest |
-| `interfaces/api/member/MemberV1Controller.java` | ⏳ | `toCommand()` 변환까지 완료, Service 주입 + 응답 변환 남음 |
+| `interfaces/api/member/MemberV1Dto.java` | ✅ | SignupRequest(`toCommand()`), SignupResponse(`from()`), MeResponse, ChangePasswordRequest |
+| `interfaces/api/member/MemberV1Controller.java` | ✅ | Facade 주입, signup API 완성 |
 | `domain/member/MemberCommand.java` | ✅ | `CreateMember` record (순수 데이터, 메서드 없음) |
 | `domain/member/MemberEntity.java` | ✅ | BaseEntity 상속, `create(CreateMember)` 정적 팩토리 메서드 |
-| `domain/member/MemberService.java` | ✅ | `signUp(CreateMember)` — Entity 생성 + Repository 저장 |
-| `domain/member/MemberRepository.java` | ✅ | 도메인 인터페이스 (`exists`, `save`) |
+| `domain/member/MemberService.java` | ✅ | `signUp(CreateMember)` — 중복 loginId 검증 + Entity 생성 + Repository 저장 |
+| `domain/member/MemberRepository.java` | ✅ | 도메인 인터페이스 (`find(loginId)`, `save`) |
+| `application/member/MemberFacade.java` | ✅ | Service 호출 오케스트레이션, MemberResult 변환 |
+| `application/member/MemberResult.java` | ✅ | 응답 변환용 record (`from(MemberEntity)`) |
+| `infrastructure/member/MemberJpaRepository.java` | ✅ | Spring Data JPA, `findByLoginId` 쿼리 메서드 |
+| `infrastructure/member/MemberRepositoryImpl.java` | ✅ | MemberRepository 구현체 (find, save 위임) |
 
-### 남은 파일들
+### 다음 작업 (이어서 할 것)
 
-| 파일 | 상태 | 설명 |
-|------|------|------|
-| `infrastructure/member/MemberJpaRepository.java` | ❌ | Spring Data JPA 인터페이스 |
-| `infrastructure/member/MemberRepositoryImpl.java` | ❌ | MemberRepository 구현체 |
-| Controller 완성 | ❌ | MemberService 주입 + signUp 호출 + SignupResponse 변환 리턴 |
+1. **비밀번호 검증 로직** — `MemberService.signUp()` 안에서 저장 전 검증
+   - 8~16자 길이 체크
+   - 영문 대소문자/숫자/특수문자만 허용
+   - 생년월일 포함 불가
+   - 실패 시 `CoreException(ErrorType.BAD_REQUEST)` throw
+2. **비밀번호 암호화 저장**
+3. **내 정보 조회 API** (`GET /api/v1/members/me`)
+4. **비밀번호 수정 API** (`PATCH /api/v1/members/me/password`)
+5. ErrorType에 `UNAUTHORIZED` 추가
 
 ### 설계 결정 사항
 
-- **Facade 미사용**: 회원가입은 단일 도메인 기능이므로 Controller → Service 직접 호출 (YAGNI 원칙)
-- **레이어 의존 방향**: interfaces → domain 단방향. DTO→Command 변환은 `SignupRequest.toCommand()`에서 담당
+- **Facade 사용 결정**: 처음엔 단일 도메인이라 미사용 예정이었으나, Facade 사용으로 변경 (Controller → Facade → Service)
+- **레이어 의존 방향**: interfaces → application → domain 단방향. DTO→Command 변환은 `SignupRequest.toCommand()`에서 담당
 - **엔티티 생성 책임**: `MemberEntity.create(command)` 정적 팩토리 메서드 사용
-
-**참고**: ErrorType에 `UNAUTHORIZED(HttpStatus.UNAUTHORIZED, ...)` 추가 필요
+- **중복 체크 방식**: `MemberRepository.find(loginId)` + `Optional.isPresent()`로 확인, exists 대신 find 사용
