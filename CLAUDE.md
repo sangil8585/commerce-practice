@@ -137,7 +137,7 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 ## Key Patterns & Conventions
 
 - **Soft Delete**: `BaseEntity`의 `deletedAt` 필드 활용 (delete/restore 메서드)
-- **에러 처리**: `CoreException` + `ErrorType` enum (INTERNAL_ERROR, BAD_REQUEST, NOT_FOUND, CONFLICT)
+- **에러 처리**: `CoreException` + `ErrorType` enum (INTERNAL_ERROR, BAD_REQUEST, NOT_FOUND, CONFLICT, UNAUTHORIZED)
 - **Redis**: master-replica 구조, 읽기는 replica-preferred, 쓰기는 master-only RedisTemplate 분리
 - **Kafka**: batch listener (최대 3000건), manual ACK, concurrency 3
 - **Batch**: `job.name` 시스템 프로퍼티로 실행할 Job 지정
@@ -180,7 +180,7 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 | 단계 | 상태 | 파일 |
 |------|------|------|
 | E2E 테스트 작성 | ✅ 완료 (RED) | `src/test/java/.../interfaces/api/member/MemberV1ApiE2ETest.java` |
-| E2E 구현 (GREEN) | ⏳ 사용자 작업 중 | 회원가입 흐름 완성, 비밀번호 검증 구현 완료 |
+| E2E 구현 (GREEN) | ⏳ 사용자 작업 중 | 회원가입 완성, 비밀번호 암호화 저장, 내 정보 조회 API 구현 중 |
 | 통합 테스트 작성 | ❌ 대기 | - |
 | 단위 테스트 작성 | ❌ 대기 | - |
 
@@ -192,8 +192,8 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 | 중복 loginId 가입 → 409 CONFLICT | ✅ 통과 |
 | 비밀번호 8자 미만 → 400 BAD_REQUEST | ✅ 통과 |
 | 비밀번호에 생년월일 포함 → 400 BAD_REQUEST | ✅ 통과 |
-| 유효한 인증 헤더로 내 정보 조회 → 200 OK | ❌ 미구현 |
-| 잘못된 비밀번호로 내 정보 조회 → 401 UNAUTHORIZED | ❌ 미구현 |
+| 유효한 인증 헤더로 내 정보 조회 → 200 OK | ⏳ 구현 중 (이름 마스킹 미완) |
+| 잘못된 비밀번호로 내 정보 조회 → 401 UNAUTHORIZED | ⏳ 구현 중 |
 | 유효한 새 비밀번호로 변경 → 200 OK | ❌ 미구현 |
 | 현재 비밀번호와 동일한 비밀번호 변경 → 400 BAD_REQUEST | ❌ 미구현 |
 
@@ -203,22 +203,23 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 |------|------|------|
 | `interfaces/api/member/MemberV1ApiSpec.java` | ✅ | Swagger API 스펙 인터페이스 |
 | `interfaces/api/member/MemberV1Dto.java` | ✅ | SignupRequest(`toCommand()`), SignupResponse(`from()`), MeResponse, ChangePasswordRequest |
-| `interfaces/api/member/MemberV1Controller.java` | ✅ | Facade 주입, signup API 완성 |
+| `interfaces/api/member/MemberV1Controller.java` | ✅ | Facade 주입, signup + getMember API |
 | `domain/member/MemberCommand.java` | ✅ | `CreateMember` record (순수 데이터, 메서드 없음) |
-| `domain/member/MemberEntity.java` | ✅ | BaseEntity 상속, `create(CreateMember)` 정적 팩토리 메서드 |
-| `domain/member/MemberService.java` | ✅ | `signUp(CreateMember)` — 중복 loginId 검증 + Entity 생성 + Repository 저장 |
+| `domain/member/MemberEntity.java` | ✅ | BaseEntity 상속, `create(CreateMember, encodedPassword)` 정적 팩토리 메서드 |
+| `domain/member/MemberService.java` | ✅ | `signUp()` 중복검증+암호화저장, `getMember()` 조회, `authenticate()` 인증 |
 | `domain/member/MemberRepository.java` | ✅ | 도메인 인터페이스 (`find(loginId)`, `save`) |
-| `application/member/MemberFacade.java` | ✅ | Service 호출 오케스트레이션, MemberResult 변환 |
+| `application/member/MemberFacade.java` | ✅ | Service 호출 오케스트레이션, createMember + getMember |
 | `application/member/MemberResult.java` | ✅ | 응답 변환용 record (`from(MemberEntity)`) |
 | `infrastructure/member/MemberJpaRepository.java` | ✅ | Spring Data JPA, `findByLoginId` 쿼리 메서드 |
 | `infrastructure/member/MemberRepositoryImpl.java` | ✅ | MemberRepository 구현체 (find, save 위임) |
+| `support/config/SecurityConfig.java` | ✅ | BCryptPasswordEncoder Bean 등록 |
+| `support/error/ErrorType.java` | ✅ | UNAUTHORIZED 추가 완료 |
 
 ### 다음 작업 (이어서 할 것)
 
-1. **비밀번호 암호화 저장**
-2. **내 정보 조회 API** (`GET /api/v1/members/me`)
-3. **비밀번호 수정 API** (`PATCH /api/v1/members/me/password`)
-4. ErrorType에 `UNAUTHORIZED` 추가
+1. **내 정보 조회 마무리** — MemberResponse에 이름 마스킹 로직 추가, ChangePasswordRequest 필드 수정 (`currentPassword`, `newPassword`)
+2. **비밀번호 수정 API** (`PATCH /api/v1/members/me/password`)
+3. E2E 테스트 전체 통과 확인
 
 ### 설계 결정 사항
 
@@ -227,3 +228,6 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 - **엔티티 생성 책임**: `MemberEntity.create(command)` 정적 팩토리 메서드 사용
 - **중복 체크 방식**: `MemberRepository.find(loginId)` + `Optional.isPresent()`로 확인, exists 대신 find 사용
 - **검증 로직 위치**: 비밀번호 규칙 등 도메인 비즈니스 규칙은 Service(도메인 레이어)에서 처리. Facade는 도메인 간 오케스트레이션 담당이므로, 단일 도메인 규칙을 Facade에 두면 다른 진입점에서 호출 시 규칙이 우회될 수 있음
+- **비밀번호 암호화**: `spring-security-crypto`의 `BCryptPasswordEncoder` 사용 (spring-boot-starter-security 대신 crypto만 의존)
+- **인증 메서드 분리**: `getMember()`는 순수 조회, `authenticate()`는 조회+비밀번호 검증. 범용성을 위해 분리
+- **어노테이션 정리**: `@Component` → `@Service`(MemberService), `@Repository`(MemberRepositoryImpl)로 역할에 맞게 변경

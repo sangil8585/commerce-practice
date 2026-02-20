@@ -3,11 +3,11 @@ package com.loopers.infrastructure.member;
 import com.loopers.domain.member.MemberEntity;
 import com.loopers.domain.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Component
+@Repository
 @RequiredArgsConstructor
 public class MemberRepositoryImpl implements MemberRepository {
 

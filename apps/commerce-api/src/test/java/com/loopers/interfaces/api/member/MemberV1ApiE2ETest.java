@@ -173,9 +173,9 @@ class MemberV1ApiE2ETest {
             // arrange - 먼저 회원가입
             MemberV1Dto.SignupRequest signupRequest = new MemberV1Dto.SignupRequest(
                 "loopers01",
-                "Passw0rd!",
-                "변시영",
-                "19950315",
+                "password1!",
+                "변상일",
+                "19930224",
                 "sangil@naver.com"
             );
             testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(signupRequest),
@@ -183,19 +183,19 @@ class MemberV1ApiE2ETest {
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Loopers-LoginId", "loopers01");
-            headers.set("X-Loopers-LoginPw", "Passw0rd!");
+            headers.set("X-Loopers-LoginPw", "password1!");
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.MeResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.MeResponse>> response =
+            ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, new HttpEntity<>(headers), responseType);
 
             // assert
             assertAll(
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                 () -> assertThat(response.getBody().data().loginId()).isEqualTo("loopers01"),
-                () -> assertThat(response.getBody().data().name()).isEqualTo("변시*"),
-                () -> assertThat(response.getBody().data().birthDate()).isEqualTo("19950315"),
+                () -> assertThat(response.getBody().data().name()).isEqualTo("변상*"),
+                () -> assertThat(response.getBody().data().birthDate()).isEqualTo("19930224"),
                 () -> assertThat(response.getBody().data().email()).isEqualTo("sangil@naver.com")
             );
         }
@@ -219,8 +219,8 @@ class MemberV1ApiE2ETest {
             headers.set("X-Loopers-LoginPw", "WrongPw1!");
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.MeResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.MeResponse>> response =
+            ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, new HttpEntity<>(headers), responseType);
 
             // assert

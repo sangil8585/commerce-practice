@@ -38,13 +38,20 @@ public class MemberV1Dto {
         }
     }
 
-    public record MeResponse(
+    public record MemberResponse(
             String loginId,
             String name,
             String birthDate,
             String email
     ) {
-
+        public static MemberResponse from(MemberResult result) {
+            return new MemberResponse(
+                    result.loginId(),
+                    result.name(),
+                    result.birthDate(),
+                    result.email()
+            );
+        }
     }
 
     public record ChangePasswordRequest(

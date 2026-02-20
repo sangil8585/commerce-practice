@@ -26,10 +26,10 @@ public class MemberEntity extends BaseEntity {
         this.email = email;
     }
 
-    public static MemberEntity create(MemberCommand.CreateMember command) {
+    public static MemberEntity create(MemberCommand.CreateMember command, String encodedPassword) {
         return new MemberEntity(
                 command.loginId(),
-                command.password(),
+                encodedPassword,
                 command.name(),
                 command.birthDate(),
                 command.email()

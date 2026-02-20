@@ -25,4 +25,15 @@ public class MemberV1Controller implements MemberV1ApiSpec{
 
         return ApiResponse.success(response);
     }
+
+    @GetMapping("/me")
+    @Override
+    public ApiResponse<MemberV1Dto.MemberResponse> getMember(
+            @RequestHeader(value = "X-Loopers-LoginId", required = false) String loginId,
+            @RequestHeader(value = "X-Loopers-LoginPw", required = false) String password
+    ) {
+        MemberResult result = memberFacade.getMember(loginId, password);
+        MemberV1Dto.MemberResponse response = MemberV1Dto.MemberResponse.from(result);
+        return ApiResponse.success(response);
+    }
 }

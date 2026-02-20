@@ -16,4 +16,5 @@ public record MemberResult(
                 member.getEmail()
         );
     }
+
 }
