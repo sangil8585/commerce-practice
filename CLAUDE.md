@@ -180,7 +180,7 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 | 단계 | 상태 | 파일 |
 |------|------|------|
 | E2E 테스트 작성 | ✅ 완료 (RED) | `src/test/java/.../interfaces/api/member/MemberV1ApiE2ETest.java` |
-| E2E 구현 (GREEN) | ⏳ 사용자 작업 중 | 회원가입 흐름 완성, 비밀번호 검증 구현 중 |
+| E2E 구현 (GREEN) | ⏳ 사용자 작업 중 | 회원가입 흐름 완성, 비밀번호 검증 구현 완료 |
 | 통합 테스트 작성 | ❌ 대기 | - |
 | 단위 테스트 작성 | ❌ 대기 | - |
 
@@ -190,8 +190,8 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 |--------|------|
 | 유효한 정보로 회원가입 → 200 OK | ✅ 통과 |
 | 중복 loginId 가입 → 409 CONFLICT | ✅ 통과 |
-| 비밀번호 8자 미만 → 400 BAD_REQUEST | ❌ 미구현 (다음 작업) |
-| 비밀번호에 생년월일 포함 → 400 BAD_REQUEST | ❌ 미구현 (다음 작업) |
+| 비밀번호 8자 미만 → 400 BAD_REQUEST | ✅ 통과 |
+| 비밀번호에 생년월일 포함 → 400 BAD_REQUEST | ✅ 통과 |
 | 유효한 인증 헤더로 내 정보 조회 → 200 OK | ❌ 미구현 |
 | 잘못된 비밀번호로 내 정보 조회 → 401 UNAUTHORIZED | ❌ 미구현 |
 | 유효한 새 비밀번호로 변경 → 200 OK | ❌ 미구현 |
@@ -215,15 +215,10 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 
 ### 다음 작업 (이어서 할 것)
 
-1. **비밀번호 검증 로직** — `MemberService.signUp()` 안에서 저장 전 검증
-   - 8~16자 길이 체크
-   - 영문 대소문자/숫자/특수문자만 허용
-   - 생년월일 포함 불가
-   - 실패 시 `CoreException(ErrorType.BAD_REQUEST)` throw
-2. **비밀번호 암호화 저장**
-3. **내 정보 조회 API** (`GET /api/v1/members/me`)
-4. **비밀번호 수정 API** (`PATCH /api/v1/members/me/password`)
-5. ErrorType에 `UNAUTHORIZED` 추가
+1. **비밀번호 암호화 저장**
+2. **내 정보 조회 API** (`GET /api/v1/members/me`)
+3. **비밀번호 수정 API** (`PATCH /api/v1/members/me/password`)
+4. ErrorType에 `UNAUTHORIZED` 추가
 
 ### 설계 결정 사항
 
@@ -231,3 +226,4 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 - **레이어 의존 방향**: interfaces → application → domain 단방향. DTO→Command 변환은 `SignupRequest.toCommand()`에서 담당
 - **엔티티 생성 책임**: `MemberEntity.create(command)` 정적 팩토리 메서드 사용
 - **중복 체크 방식**: `MemberRepository.find(loginId)` + `Optional.isPresent()`로 확인, exists 대신 find 사용
+- **검증 로직 위치**: 비밀번호 규칙 등 도메인 비즈니스 규칙은 Service(도메인 레이어)에서 처리. Facade는 도메인 간 오케스트레이션 담당이므로, 단일 도메인 규칙을 Facade에 두면 다른 진입점에서 호출 시 규칙이 우회될 수 있음
