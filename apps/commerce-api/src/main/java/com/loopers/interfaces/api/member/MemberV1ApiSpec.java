@@ -19,4 +19,11 @@ public interface MemberV1ApiSpec {
             @RequestHeader("X-Loopers-LoginId") String loginId,
             @RequestHeader("X-Loopers-LoginPw") String password
     );
+
+    @Operation(summary = "비밀번호 수정", description = "비밀번호를 변경합니다.")
+    ApiResponse<Void> changePassword(
+            @RequestHeader("X-Loopers-LoginId") String loginId,
+            @RequestHeader("X-Loopers-LoginPw") String password,
+            MemberV1Dto.ChangePasswordRequest request
+    );
 }

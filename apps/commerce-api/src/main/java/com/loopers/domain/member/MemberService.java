@@ -19,20 +19,22 @@ public class MemberService {
         if(memberRepository.find(command.loginId()).isPresent()) {
             throw new CoreException(ErrorType.CONFLICT);
         }
-        if(command.password().length() < 8 || command.password().length() > 16) {
-            throw new CoreException(ErrorType.BAD_REQUEST);
-        }
-        if(!command.password().matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;:',.<>?/~`\"\\\\]+$")) {
-            throw new CoreException(ErrorType.BAD_REQUEST);
-        }
-        if(command.password().contains(command.birthDate())) {
-            throw new CoreException(ErrorType.BAD_REQUEST);
-        }
+        validatePassword(command.password(), command.birthDate());
         String encodedPassword = passwordEncoder.encode(command.password());
         MemberEntity memberEntity = MemberEntity.create(command, encodedPassword);
         return memberRepository.save(memberEntity);
     }
 
+    @Transactional
+    public void changePassword(String loginId, String currentPassword, String newPassword) {
+        if (currentPassword.equals(newPassword)) {
+            throw new CoreException(ErrorType.BAD_REQUEST);
+        }
+        MemberEntity member = getMember(loginId);
+        validatePassword(newPassword, member.getBirthDate());
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        member.changePassword(encodedPassword);
+    }
 
     @Transactional(readOnly = true)
     public MemberEntity getMember(String loginId) {
@@ -48,5 +50,17 @@ public class MemberService {
             throw new CoreException(ErrorType.UNAUTHORIZED);
         }
         return member;
+    }
+
+    private void validatePassword(String password, String birthDate) {
+        if(password.length() < 8 || password.length() > 16) {
+            throw new CoreException(ErrorType.BAD_REQUEST);
+        }
+        if(!password.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;:',.<>?/~`\"\\\\]+$")) {
+            throw new CoreException(ErrorType.BAD_REQUEST);
+        }
+        if(password.contains(birthDate)) {
+            throw new CoreException(ErrorType.BAD_REQUEST);
+        }
     }
 }

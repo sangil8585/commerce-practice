@@ -35,4 +35,8 @@ public class MemberEntity extends BaseEntity {
                 command.email()
         );
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

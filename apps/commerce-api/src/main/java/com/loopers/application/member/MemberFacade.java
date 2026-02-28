@@ -22,4 +22,9 @@ public class MemberFacade {
         MemberEntity memberEntity = memberService.authenticate(loginId, password);
         return MemberResult.from(memberEntity);
     }
+
+    public void changePassword(String loginId, String password, String currentPassword, String newPassword) {
+        memberService.authenticate(loginId, password);
+        memberService.changePassword(loginId, currentPassword, newPassword);
+    }
 }

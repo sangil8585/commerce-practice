@@ -47,16 +47,23 @@ public class MemberV1Dto {
         public static MemberResponse from(MemberResult result) {
             return new MemberResponse(
                     result.loginId(),
-                    result.name(),
+                    maskName(result.name()),
                     result.birthDate(),
                     result.email()
             );
         }
+
+        private static String maskName(String name) {
+            if (name == null || name.isEmpty()) {
+                return name;
+            }
+            return name.substring(0, name.length() - 1) + "*";
+        }
     }
 
     public record ChangePasswordRequest(
-            String loginId,
-            String password
+            String currentPassword,
+            String newPassword
     ) {
 
     }

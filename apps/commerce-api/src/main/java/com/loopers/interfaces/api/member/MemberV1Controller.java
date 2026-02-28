@@ -36,4 +36,15 @@ public class MemberV1Controller implements MemberV1ApiSpec{
         MemberV1Dto.MemberResponse response = MemberV1Dto.MemberResponse.from(result);
         return ApiResponse.success(response);
     }
+
+    @PatchMapping("/me/password")
+    @Override
+    public ApiResponse<Void> changePassword(
+            @RequestHeader(value = "X-Loopers-LoginId", required = false) String loginId,
+            @RequestHeader(value = "X-Loopers-LoginPw", required = false) String password,
+            @RequestBody MemberV1Dto.ChangePasswordRequest request
+    ) {
+        memberFacade.changePassword(loginId, password, request.currentPassword(), request.newPassword());
+        return ApiResponse.success(null);
+    }
 }
