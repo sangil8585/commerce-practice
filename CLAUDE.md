@@ -231,3 +231,4 @@ docker-compose -f ./docker/monitoring-compose.yml up -d
 - **비밀번호 암호화**: `spring-security-crypto`의 `BCryptPasswordEncoder` 사용 (spring-boot-starter-security 대신 crypto만 의존)
 - **인증 메서드 분리**: `getMember()`는 순수 조회, `authenticate()`는 조회+비밀번호 검증. 범용성을 위해 분리
 - **어노테이션 정리**: `@Component` → `@Service`(MemberService), `@Repository`(MemberRepositoryImpl)로 역할에 맞게 변경
+- **Entity는 domain에 위치**: `@Entity` JPA 엔티티를 domain 레이어에 둔다. infrastructure에 별도 Entity를 두고 `toDomain()`/`fromDomain()` 변환하는 방식은 채택하지 않음. 개발 생산성과 변환 보일러플레이트 제거를 우선
