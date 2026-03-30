@@ -1,7 +1,7 @@
-package com.loopers.domain.member;
+package com.loopers.domain.user;
 
-public class MemberCommand {
-    public record CreateMember(
+public class UserCommand {
+    public record CreateUser(
             String loginId,
             String password,
             String name,
@@ -10,6 +10,4 @@ public class MemberCommand {
     ) {
 
     }
-
-
 }

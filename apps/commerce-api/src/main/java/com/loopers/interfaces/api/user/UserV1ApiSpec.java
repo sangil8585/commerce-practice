@@ -1,21 +1,20 @@
-package com.loopers.interfaces.api.member;
+package com.loopers.interfaces.api.user;
 
-import com.loopers.domain.member.MemberEntity;
 import com.loopers.interfaces.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@Tag(name = "Member V1 API", description = "Member Controller 스펙입니다.")
-public interface MemberV1ApiSpec {
+@Tag(name = "User V1 API", description = "User Controller 스펙입니다.")
+public interface UserV1ApiSpec {
 
     @Operation(summary = "회원 가입", description = "회원 가입 요청을 보냅니다.")
-    ApiResponse<MemberV1Dto.SignupResponse> signup(
-            MemberV1Dto.SignupRequest signupRequest
+    ApiResponse<UserV1Dto.SignupResponse> signup(
+            UserV1Dto.SignupRequest signupRequest
     );
 
     @Operation(summary = "정보 조회", description = "유저 정보를 조회합니다.")
-    ApiResponse<MemberV1Dto.MemberResponse> getMember(
+    ApiResponse<UserV1Dto.UserResponse> getUser(
             @RequestHeader("X-Loopers-LoginId") String loginId,
             @RequestHeader("X-Loopers-LoginPw") String password
     );
@@ -24,6 +23,6 @@ public interface MemberV1ApiSpec {
     ApiResponse<Void> changePassword(
             @RequestHeader("X-Loopers-LoginId") String loginId,
             @RequestHeader("X-Loopers-LoginPw") String password,
-            MemberV1Dto.ChangePasswordRequest request
+            UserV1Dto.ChangePasswordRequest request
     );
 }

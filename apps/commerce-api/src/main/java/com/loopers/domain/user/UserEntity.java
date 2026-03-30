@@ -1,6 +1,8 @@
-package com.loopers.domain.member;
+package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -9,16 +11,17 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "member")
+@Table(name = "users")
+@AttributeOverride(name = "id", column = @Column(name = "user_id"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MemberEntity extends BaseEntity {
+public class UserEntity extends BaseEntity {
     private String loginId;
     private String password;
     private String name;
     private String birthDate;
     private String email;
 
-    public MemberEntity(String loginId, String password, String name, String birthDate, String email) {
+    public UserEntity(String loginId, String password, String name, String birthDate, String email) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
@@ -26,8 +29,8 @@ public class MemberEntity extends BaseEntity {
         this.email = email;
     }
 
-    public static MemberEntity create(MemberCommand.CreateMember command, String encodedPassword) {
-        return new MemberEntity(
+    public static UserEntity create(UserCommand.CreateUser command, String encodedPassword) {
+        return new UserEntity(
                 command.loginId(),
                 encodedPassword,
                 command.name(),

@@ -1,4 +1,4 @@
-package com.loopers.interfaces.api.member;
+package com.loopers.interfaces.api.user;
 
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
@@ -21,17 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class MemberV1ApiE2ETest {
+class UserV1ApiE2ETest {
 
-    private static final String ENDPOINT_SIGNUP = "/api/v1/members/signup";
-    private static final String ENDPOINT_ME = "/api/v1/members/me";
-    private static final String ENDPOINT_CHANGE_PASSWORD = "/api/v1/members/me/password";
+    private static final String ENDPOINT_SIGNUP = "/api/v1/users/signup";
+    private static final String ENDPOINT_ME = "/api/v1/users/me";
+    private static final String ENDPOINT_CHANGE_PASSWORD = "/api/v1/users/me/password";
 
     private final TestRestTemplate testRestTemplate;
     private final DatabaseCleanUp databaseCleanUp;
 
     @Autowired
-    public MemberV1ApiE2ETest(
+    public UserV1ApiE2ETest(
         TestRestTemplate testRestTemplate,
         DatabaseCleanUp databaseCleanUp
     ) {
@@ -47,7 +47,7 @@ class MemberV1ApiE2ETest {
     // ============================================================
     // 회원가입
     // ============================================================
-    @DisplayName("POST /api/v1/members/signup")
+    @DisplayName("POST /api/v1/users/signup")
     @Nested
     class Signup {
 
@@ -55,7 +55,7 @@ class MemberV1ApiE2ETest {
         @Test
         void signupSuccessfully_whenValidInfoIsProvided() {
             // arrange
-            MemberV1Dto.SignupRequest request = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest request = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Passw0rd!",
                 "변시영",
@@ -64,8 +64,8 @@ class MemberV1ApiE2ETest {
             );
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.SignupResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(request), responseType);
 
             // assert
@@ -81,7 +81,7 @@ class MemberV1ApiE2ETest {
         @Test
         void throwsConflict_whenLoginIdAlreadyExists() {
             // arrange
-            MemberV1Dto.SignupRequest firstRequest = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest firstRequest = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Passw0rd!",
                 "변시영",
@@ -89,9 +89,9 @@ class MemberV1ApiE2ETest {
                 "sangil@naver.com"
             );
             testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(firstRequest),
-                new ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>>() {});
+                new ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>>() {});
 
-            MemberV1Dto.SignupRequest duplicateRequest = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest duplicateRequest = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Another1!",
                 "김철수",
@@ -100,8 +100,8 @@ class MemberV1ApiE2ETest {
             );
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.SignupResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(duplicateRequest), responseType);
 
             // assert
@@ -111,21 +111,93 @@ class MemberV1ApiE2ETest {
             );
         }
 
-        @DisplayName("비밀번호가 8자 미만이면, 400 BAD_REQUEST 응답을 받는다.")
+        @DisplayName("비밀번호가 9자 미만이면, 400 BAD_REQUEST 응답을 받는다.")
         @Test
         void throwsBadRequest_whenPasswordIsTooShort() {
             // arrange
-            MemberV1Dto.SignupRequest request = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest request = new UserV1Dto.SignupRequest(
                 "loopers01",
-                "Short1!",
+                "Short1!a",
                 "변시영",
                 "19950315",
                 "sangil@naver.com"
             );
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.SignupResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
+                testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(request), responseType);
+
+            // assert
+            assertAll(
+                () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
+        }
+
+        @DisplayName("비밀번호에 영문이 포함되지 않으면, 400 BAD_REQUEST 응답을 받는다.")
+        @Test
+        void throwsBadRequest_whenPasswordHasNoLetters() {
+            // arrange
+            UserV1Dto.SignupRequest request = new UserV1Dto.SignupRequest(
+                "loopers01",
+                "123456789!",
+                "변시영",
+                "19950315",
+                "sangil@naver.com"
+            );
+
+            // act
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
+                testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(request), responseType);
+
+            // assert
+            assertAll(
+                () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
+        }
+
+        @DisplayName("비밀번호에 숫자가 포함되지 않으면, 400 BAD_REQUEST 응답을 받는다.")
+        @Test
+        void throwsBadRequest_whenPasswordHasNoDigits() {
+            // arrange
+            UserV1Dto.SignupRequest request = new UserV1Dto.SignupRequest(
+                "loopers01",
+                "Passwords!",
+                "변시영",
+                "19950315",
+                "sangil@naver.com"
+            );
+
+            // act
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
+                testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(request), responseType);
+
+            // assert
+            assertAll(
+                () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
+        }
+
+        @DisplayName("비밀번호에 특수문자가 포함되지 않으면, 400 BAD_REQUEST 응답을 받는다.")
+        @Test
+        void throwsBadRequest_whenPasswordHasNoSpecialChars() {
+            // arrange
+            UserV1Dto.SignupRequest request = new UserV1Dto.SignupRequest(
+                "loopers01",
+                "Password12",
+                "변시영",
+                "19950315",
+                "sangil@naver.com"
+            );
+
+            // act
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(request), responseType);
 
             // assert
@@ -139,7 +211,7 @@ class MemberV1ApiE2ETest {
         @Test
         void throwsBadRequest_whenPasswordContainsBirthDate() {
             // arrange
-            MemberV1Dto.SignupRequest request = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest request = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Pass19950315!",
                 "변시영",
@@ -148,8 +220,8 @@ class MemberV1ApiE2ETest {
             );
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.SignupResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.SignupResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(request), responseType);
 
             // assert
@@ -163,7 +235,7 @@ class MemberV1ApiE2ETest {
     // ============================================================
     // 내 정보 조회
     // ============================================================
-    @DisplayName("GET /api/v1/members/me")
+    @DisplayName("GET /api/v1/users/me")
     @Nested
     class GetMe {
 
@@ -171,23 +243,23 @@ class MemberV1ApiE2ETest {
         @Test
         void returnsMyInfo_whenValidCredentialsAreProvided() {
             // arrange - 먼저 회원가입
-            MemberV1Dto.SignupRequest signupRequest = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest signupRequest = new UserV1Dto.SignupRequest(
                 "loopers01",
-                "password1!",
+                "Password1!",
                 "변상일",
                 "19930224",
                 "sangil@naver.com"
             );
             testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(signupRequest),
-                new ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>>() {});
+                new ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>>() {});
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Loopers-LoginId", "loopers01");
-            headers.set("X-Loopers-LoginPw", "password1!");
+            headers.set("X-Loopers-LoginPw", "Password1!");
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, new HttpEntity<>(headers), responseType);
 
             // assert
@@ -204,7 +276,7 @@ class MemberV1ApiE2ETest {
         @Test
         void throwsUnauthorized_whenPasswordIsWrong() {
             // arrange - 먼저 회원가입
-            MemberV1Dto.SignupRequest signupRequest = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest signupRequest = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Passw0rd!",
                 "변시영",
@@ -212,15 +284,15 @@ class MemberV1ApiE2ETest {
                 "sangil@naver.com"
             );
             testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(signupRequest),
-                new ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>>() {});
+                new ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>>() {});
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Loopers-LoginId", "loopers01");
             headers.set("X-Loopers-LoginPw", "WrongPw1!");
 
             // act
-            ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, new HttpEntity<>(headers), responseType);
 
             // assert
@@ -231,7 +303,7 @@ class MemberV1ApiE2ETest {
     // ============================================================
     // 비밀번호 수정
     // ============================================================
-    @DisplayName("PATCH /api/v1/members/me/password")
+    @DisplayName("PATCH /api/v1/users/me/password")
     @Nested
     class ChangePassword {
 
@@ -239,7 +311,7 @@ class MemberV1ApiE2ETest {
         @Test
         void changesPasswordSuccessfully_whenNewPasswordIsValid() {
             // arrange - 먼저 회원가입
-            MemberV1Dto.SignupRequest signupRequest = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest signupRequest = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Passw0rd!",
                 "변시영",
@@ -247,13 +319,13 @@ class MemberV1ApiE2ETest {
                 "sangil@naver.com"
             );
             testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(signupRequest),
-                new ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>>() {});
+                new ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>>() {});
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Loopers-LoginId", "loopers01");
             headers.set("X-Loopers-LoginPw", "Passw0rd!");
 
-            MemberV1Dto.ChangePasswordRequest request = new MemberV1Dto.ChangePasswordRequest(
+            UserV1Dto.ChangePasswordRequest request = new UserV1Dto.ChangePasswordRequest(
                 "Passw0rd!",
                 "NewPassw0rd!"
             );
@@ -271,7 +343,7 @@ class MemberV1ApiE2ETest {
         @Test
         void throwsBadRequest_whenNewPasswordIsSameAsCurrent() {
             // arrange - 먼저 회원가입
-            MemberV1Dto.SignupRequest signupRequest = new MemberV1Dto.SignupRequest(
+            UserV1Dto.SignupRequest signupRequest = new UserV1Dto.SignupRequest(
                 "loopers01",
                 "Passw0rd!",
                 "변시영",
@@ -279,13 +351,13 @@ class MemberV1ApiE2ETest {
                 "sangil@naver.com"
             );
             testRestTemplate.exchange(ENDPOINT_SIGNUP, HttpMethod.POST, new HttpEntity<>(signupRequest),
-                new ParameterizedTypeReference<ApiResponse<MemberV1Dto.SignupResponse>>() {});
+                new ParameterizedTypeReference<ApiResponse<UserV1Dto.SignupResponse>>() {});
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Loopers-LoginId", "loopers01");
             headers.set("X-Loopers-LoginPw", "Passw0rd!");
 
-            MemberV1Dto.ChangePasswordRequest request = new MemberV1Dto.ChangePasswordRequest(
+            UserV1Dto.ChangePasswordRequest request = new UserV1Dto.ChangePasswordRequest(
                 "Passw0rd!",
                 "Passw0rd!"
             );

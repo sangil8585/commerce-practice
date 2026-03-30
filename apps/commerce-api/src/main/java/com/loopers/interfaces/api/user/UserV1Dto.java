@@ -1,9 +1,9 @@
-package com.loopers.interfaces.api.member;
+package com.loopers.interfaces.api.user;
 
-import com.loopers.application.member.MemberResult;
-import com.loopers.domain.member.MemberCommand;
+import com.loopers.application.user.UserResult;
+import com.loopers.domain.user.UserCommand;
 
-public class MemberV1Dto {
+public class UserV1Dto {
     public record SignupRequest(
             String loginId,
             String password,
@@ -11,8 +11,8 @@ public class MemberV1Dto {
             String birthDate,
             String email
     ) {
-        public MemberCommand.CreateMember toCommand() {
-            return new MemberCommand.CreateMember(
+        public UserCommand.CreateUser toCommand() {
+            return new UserCommand.CreateUser(
                     loginId,
                     password,
                     name,
@@ -28,7 +28,7 @@ public class MemberV1Dto {
             String birthDate,
             String email
     ) {
-        public static SignupResponse from(MemberResult result) {
+        public static SignupResponse from(UserResult result) {
             return new SignupResponse(
                     result.loginId(),
                     result.name(),
@@ -38,14 +38,14 @@ public class MemberV1Dto {
         }
     }
 
-    public record MemberResponse(
+    public record UserResponse(
             String loginId,
             String name,
             String birthDate,
             String email
     ) {
-        public static MemberResponse from(MemberResult result) {
-            return new MemberResponse(
+        public static UserResponse from(UserResult result) {
+            return new UserResponse(
                     result.loginId(),
                     maskName(result.name()),
                     result.birthDate(),
