@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { authStore } from '@/stores/auth'
 
 const searchQuery = ref('')
 </script>
@@ -23,8 +24,13 @@ const searchQuery = ref('')
       </div>
 
       <nav class="header-nav">
-        <router-link to="/login" class="nav-link">로그인</router-link>
-        <router-link to="/signup" class="nav-link">회원가입</router-link>
+        <template v-if="!authStore.isLoggedIn.value">
+          <router-link to="/login" class="nav-link">로그인</router-link>
+          <router-link to="/signup" class="nav-link">회원가입</router-link>
+        </template>
+        <template v-else>
+          <router-link to="/mypage" class="nav-link">마이페이지</router-link>
+        </template>
         <router-link to="/cart" class="nav-link cart-link">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
